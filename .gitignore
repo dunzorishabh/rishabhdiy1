@@ -1,3 +1,4 @@
-go_mux.bin
-go.mod
-go.sum
+*.bin
+*.mod
+*.sum
+*.DS_Store
