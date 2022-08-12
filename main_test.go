@@ -7,15 +7,14 @@ import (
 	// tom: for ensureTableExists
 	"log"
 
+	"bytes"
+	"encoding/json"
 	// tom: for TestEmptyTable and next functions (no go get is required"
 	"net/http"
 	// "net/url"
 	"net/http/httptest"
 	"strconv"
-	"encoding/json"
-	"bytes"
 	// "io/ioutil"
-
 )
 
 var a App
@@ -42,18 +41,40 @@ func ensureTableExists() {
 }
 
 func clearTable() {
-	a.DB.Exec("DELETE FROM products")
+	a.DB.Exec("TRUNCATE TABLE products CASCADE")
 	a.DB.Exec("ALTER SEQUENCE products_id_seq RESTART WITH 1")
+
+	a.DB.Exec("TRUNCATE TABLE store CASCADE")
+	a.DB.Exec("ALTER SEQUENCE store_id_seq RESTART WITH 1")
+
+	a.DB.Exec("TRUNCATE TABLE storeProducts CASCADE")
 }
 
-const tableCreationQuery = `CREATE TABLE IF NOT EXISTS products
+const tableCreationQuery = `
+
+CREATE TABLE IF NOT EXISTS products
 (
     id SERIAL,
     name TEXT NOT NULL,
     price NUMERIC(10,2) NOT NULL DEFAULT 0.00,
     CONSTRAINT products_pkey PRIMARY KEY (id)
-)`
+    
+)
 
+CREATE TABLE IF NOT EXISTS store
+(
+    id SERIAL,
+    name TEXT NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS storeProducts
+(
+    Store_id    int
+	Product_id  int
+	IsAvailable bool
+)
+
+`
 
 // tom: next functions added later, these require more modules: net/http net/http/httptest
 func TestEmptyTable(t *testing.T) {
@@ -127,7 +148,6 @@ func TestCreateProduct(t *testing.T) {
 	}
 }
 
-
 func TestGetProduct(t *testing.T) {
 	clearTable()
 	addProducts(1)
@@ -199,4 +219,14 @@ func TestDeleteProduct(t *testing.T) {
 	req, _ = http.NewRequest("GET", "/product/1", nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusNotFound, response.Code)
+}
+
+func TestAddProductToStore(t *testing.T) {
+	clearTable()
+	addProducts(1)
+	var jsonStr = []byte(`{"products": [ {"id" : 1, "name" : "prod1", "price" : 100}, {"id" : 2, "name" : "prod2", "price" : 200} ]}`)
+	req, _ := http.NewRequest("POST", "/store/1", bytes.NewBuffer(jsonStr))
+	req.Header.Set("Content-Type", "application/json")
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusCreated, response.Code)
 }
