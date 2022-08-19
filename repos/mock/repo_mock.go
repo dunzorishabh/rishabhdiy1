@@ -121,17 +121,17 @@ func (mr *MockRepoInterfaceMockRecorder) GetStoreProducts(db, sId interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStoreProducts", reflect.TypeOf((*MockRepoInterface)(nil).GetStoreProducts), db, sId)
 }
 
-// checkStoreAvailableInDB mocks base method.
-func (m *MockRepoInterface) checkStoreAvailableInDB(db *gorm.DB, sId int) ([]*models.Store, error) {
+// CheckStoreAvailableInDB mocks base method.
+func (m *MockRepoInterface) CheckStoreAvailableInDB(db *gorm.DB, sId int) ([]*models.Store, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "checkStoreAvailableInDB", db, sId)
+	ret := m.ctrl.Call(m, "CheckStoreAvailableInDB", db, sId)
 	ret0, _ := ret[0].([]*models.Store)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// checkStoreAvailableInDB indicates an expected call of checkStoreAvailableInDB.
-func (mr *MockRepoInterfaceMockRecorder) checkStoreAvailableInDB(db, sId interface{}) *gomock.Call {
+// CheckStoreAvailableInDB indicates an expected call of CheckStoreAvailableInDB.
+func (mr *MockRepoInterfaceMockRecorder) CheckStoreAvailableInDB(db, sId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "checkStoreAvailableInDB", reflect.TypeOf((*MockRepoInterface)(nil).checkStoreAvailableInDB), db, sId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckStoreAvailableInDB", reflect.TypeOf((*MockRepoInterface)(nil).CheckStoreAvailableInDB), db, sId)
 }

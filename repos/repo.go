@@ -15,7 +15,7 @@ type RepoInterface interface {
 	GetProduct(db *gorm.DB, pId int) ([]*models.Product, error)
 	FetchProductsByIDList(db *gorm.DB, pIds []int) ([]*models.Product, error)
 	GetStoreProducts(db *gorm.DB, sId int) ([]*models.StoreProducts, error)
-	checkStoreAvailableInDB(db *gorm.DB, sId int) ([]*models.Store, error)
+	CheckStoreAvailableInDB(db *gorm.DB, sId int) ([]*models.Store, error)
 	AddProductsToStore(db *gorm.DB, StoreId int, storeProducts []*models.StoreProducts) error
 	GetAllProductsFromStore(db *gorm.DB, StoreId int) ([]*models.Product, error)
 }
@@ -29,13 +29,13 @@ func (repo *Repos) CreateNewStore(db *gorm.DB, store *models.Store) error {
 // product retrieval based on id
 
 func (repo *Repos) GetProduct(db *gorm.DB, pId int) ([]*models.Product, error) {
-	var prods []*models.Product
-	response := db.Find(&models.Product{ID: pId}).First(&prods)
+	var prod []*models.Product
+	response := db.Find(&models.Product{ID: pId}).First(&prod)
 	err := response.Error
 	if err != nil {
 		return nil, err
 	}
-	return prods, nil
+	return prod, nil
 }
 
 // get all the products based on IDs
@@ -65,7 +65,7 @@ func (repo *Repos) GetStoreProducts(db *gorm.DB, sId int) ([]*models.StoreProduc
 
 // check store availability
 
-func (repo *Repos) checkStoreAvailableInDB(db *gorm.DB, sId int) ([]*models.Store, error) {
+func (repo *Repos) CheckStoreAvailableInDB(db *gorm.DB, sId int) ([]*models.Store, error) {
 	var storeCheck []*models.Store
 	response := db.Where(&models.Store{StoreId: sId}).First(&storeCheck)
 	err := response.Error
@@ -76,9 +76,13 @@ func (repo *Repos) checkStoreAvailableInDB(db *gorm.DB, sId int) ([]*models.Stor
 	return storeCheck, nil
 }
 
-// add products service
+// add products
 
 func (repo *Repos) AddProductsToStore(db *gorm.DB, StoreId int, s []*models.StoreProducts) error {
+	_, err := repo.CheckStoreAvailableInDB(db, StoreId)
+	if err != nil {
+		return err
+	}
 	for _, sProd := range s {
 		_, err := repo.GetProduct(db, sProd.ProductId)
 		if err != nil {
@@ -89,9 +93,13 @@ func (repo *Repos) AddProductsToStore(db *gorm.DB, StoreId int, s []*models.Stor
 	return db.Create(&s).Error
 }
 
-// get products service
+// get products
 
 func (repo *Repos) GetAllProductsFromStore(db *gorm.DB, StoreId int) ([]*models.Product, error) {
+	_, err := repo.CheckStoreAvailableInDB(db, StoreId)
+	if err != nil {
+		return nil, err
+	}
 	sProds, err := repo.GetStoreProducts(db, StoreId)
 	if err != nil {
 		return nil, err

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -25,6 +26,7 @@ func TestMain(m *testing.M) {
 		os.Getenv("TEST_DB_USERNAME"),
 		os.Getenv("TEST_DB_PASSWORD"),
 		os.Getenv("TEST_DB_NAME"))
+
 	ensureTableExists()
 
 	code := m.Run()
@@ -35,22 +37,31 @@ func TestMain(m *testing.M) {
 }
 
 func ensureTableExists() {
-	if _, err := a.DB.Exec(tableCreationQuery); err != nil {
+	if _, err := a.DB.Exec(productTableCreationQuery); err != nil {
 		log.Fatal(err)
 	}
+
+	if _, err := a.DB.Exec(storeTableCreationQuery); err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := a.DB.Exec(storeProductsTableCreationQuery); err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 func clearTable() {
 	a.DB.Exec("TRUNCATE TABLE products CASCADE")
 	a.DB.Exec("ALTER SEQUENCE products_id_seq RESTART WITH 1")
 
-	a.DB.Exec("TRUNCATE TABLE store CASCADE")
-	a.DB.Exec("ALTER SEQUENCE store_id_seq RESTART WITH 1")
+	a.DB.Exec("TRUNCATE TABLE stores CASCADE")
+	a.DB.Exec("ALTER SEQUENCE stores_id_seq RESTART WITH 1")
 
 	a.DB.Exec("TRUNCATE TABLE storeProducts CASCADE")
 }
 
-const tableCreationQuery = `
+const productTableCreationQuery = `
 
 CREATE TABLE IF NOT EXISTS products
 (
@@ -60,20 +71,22 @@ CREATE TABLE IF NOT EXISTS products
     CONSTRAINT products_pkey PRIMARY KEY (id)
     
 )
+`
 
-CREATE TABLE IF NOT EXISTS store
+const storeTableCreationQuery = `
+CREATE TABLE IF NOT EXISTS stores
 (
-    id SERIAL,
+    store_id SERIAL,
     name TEXT NOT NULL
 )
+`
 
+const storeProductsTableCreationQuery = `
 CREATE TABLE IF NOT EXISTS storeProducts
-(
-    Store_id    int
-	Product_id  int
-	IsAvailable bool
+(	store_id int,
+	product_id int,
+	is_available bool
 )
-
 `
 
 // tom: next functions added later, these require more modules: net/http net/http/httptest
@@ -199,6 +212,7 @@ func TestUpdateProduct(t *testing.T) {
 	}
 
 	if m["price"] == originalProduct["price"] {
+		fmt.Printf(" %T, %T, %T ", originalProduct["price"], m["price"], m["price"])
 		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalProduct["price"], m["price"], m["price"])
 	}
 }
@@ -221,12 +235,68 @@ func TestDeleteProduct(t *testing.T) {
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
 
-func TestAddProductToStore(t *testing.T) {
-	clearTable()
-	addProducts(1)
-	var jsonStr = []byte(`{"products": [ {"id" : 1, "name" : "prod1", "price" : 100}, {"id" : 2, "name" : "prod2", "price" : 200} ]}`)
-	req, _ := http.NewRequest("POST", "/store/1", bytes.NewBuffer(jsonStr))
-	req.Header.Set("Content-Type", "application/json")
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusCreated, response.Code)
-}
+//func TestAddProductToStore(t *testing.T) {
+//	clearTable()
+//	addStores(1)
+//	var jsonStr = []byte(`[ {"product_id":1,"is_available":true},{"product_id":2,"is_available":true]`)
+//
+//	req, _ := http.NewRequest("POST", "/store/1", bytes.NewBuffer(jsonStr))
+//	req.Header.Set("Content-Type", "application/json")
+//
+//	rr := executeRequest(req)
+//	checkResponseCode(t, http.StatusCreated, rr.Code)
+//
+//	var m map[string]interface{}
+//	json.Unmarshal(rr.Body.Bytes(), &m)
+//
+//	if m["product_id"] != "1" {
+//		t.Errorf("Expected product name to be '%v'. Got '%v'", 1, m["product_id"])
+//	}
+//
+//	if m["is_available"] != true {
+//		t.Errorf("Expected product price to be '%v'. Got '%v'", true, m["is_available"])
+//	}
+//}
+//
+//func TestAddProductToStore_ProductAvailable(t *testing.T) {
+//	clearTable()
+//	addProducts(1)
+//	var jsonStr = []byte(`[ {"product_id":1,"is_available":true},{"product_id":2,"is_available":true]`)
+//
+//	req, _ := http.NewRequest("POST", "/store/1", bytes.NewBuffer(jsonStr))
+//	req.Header.Set("Content-Type", "application/json")
+//
+//	rr := executeRequest(req)
+//	checkResponseCode(t, http.StatusCreated, rr.Code)
+//
+//	var m map[string]interface{}
+//	json.Unmarshal(rr.Body.Bytes(), &m)
+//
+//	if m["product_id"] != "1" {
+//		t.Errorf("Expected product name to be '%v'. Got '%v'", 1, m["product_id"])
+//	}
+//
+//	if m["is_available"] != true {
+//		t.Errorf("Expected product price to be '%v'. Got '%v'", true, m["is_available"])
+//	}
+//}
+//
+//func addStores(count int) {
+//	if count < 1 {
+//		count = 1
+//	}
+//
+//	for i := 0; i < count; i++ {
+//		a.GormDB.Exec("INSERT INTO stores(store_id, name) VALUES($1, $2)", 1, i+1)
+//	}
+//}
+//
+//func TestGetProductsInStore(t *testing.T) {
+//	clearTable()
+//	addProducts(1)
+//	addStores(1)
+//
+//	req, _ := http.NewRequest("GET", "/store/1/products", nil)
+//	rr := executeRequest(req)
+//	checkResponseCode(t, http.StatusOK, rr.Code)
+//}
