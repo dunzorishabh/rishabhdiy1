@@ -8,7 +8,6 @@ import (
 	// "errors"
 )
 
-
 // tom: add backticks to json
 type product struct {
 	ID    int     `json:"id"`
